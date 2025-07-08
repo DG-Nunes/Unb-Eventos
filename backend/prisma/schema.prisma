@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Usuários do sistema
+model Usuario {
+  id         Int        @id @default(autoincrement())
+  nome       String
+  email      String     @unique
+  senha      String
+  matricula  String     @unique
+  papel      String     // 'organizador', 'participante'
+  criado_em  DateTime   @default(now())
+  atualizado_em DateTime @updatedAt
+  eventos    Evento[]   @relation("OrganizadorEventos")
+  inscricoes Inscricao[]
+  avaliacoes Avaliacao[]
+}
+
+// 2. Eventos
+model Evento {
+  id          Int        @id @default(autoincrement())
+  nome        String
+  descricao   String
+  data_inicio DateTime
+  data_fim    DateTime
+  local       String
+  bloco       String?
+  capacidade  Int
+  status      String     // 'ativo', 'cancelado', 'concluido'
+  criado_em   DateTime   @default(now())
+  atualizado_em DateTime @updatedAt
+  organizador   Usuario   @relation("OrganizadorEventos", fields: [organizador_id], references: [id])
+  organizador_id Int
+  inscricoes   Inscricao[]
+  atividades   Atividade[]
+  arquivos     Arquivo[]
+  categoria    Categoria? @relation(fields: [categoria_id], references: [id])
+  categoria_id Int?
+  local_evento Local?    @relation(fields: [local_id], references: [id])
+  local_id     Int?
+  avaliacoes   Avaliacao[]
+}
+
+// 3. Atividades do evento
+model Atividade {
+  id          Int      @id @default(autoincrement())
+  nome        String
+  descricao   String
+  data_inicio DateTime
+  data_fim    DateTime
+  evento      Evento   @relation(fields: [evento_id], references: [id])
+  evento_id   Int
+  criado_em   DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+  palestrantes Palestrante[]
+}
+
+// 4. Inscrições
+model Inscricao {
+  id        Int      @id @default(autoincrement())
+  usuario   Usuario @relation(fields: [usuario_id], references: [id])
+  usuario_id Int
+  evento    Evento  @relation(fields: [evento_id], references: [id])
+  evento_id Int
+  status    String  // 'confirmada', 'pendente', 'cancelada'
+  criado_em DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+  certificado Certificado?
+}
+
+// 5. Certificados
+model Certificado {
+  id           Int      @id @default(autoincrement())
+  inscricao    Inscricao @relation(fields: [inscricao_id], references: [id])
+  inscricao_id Int      @unique
+  data_emissao DateTime @default(now())
+  url          String?
+}
+
+// 6. Arquivos (para dados binários)
+model Arquivo {
+  id        Int      @id @default(autoincrement())
+  nome_arquivo String
+  url       String
+  size      Int
+  type      String
+  evento    Evento?  @relation(fields: [evento_id], references: [id])
+  evento_id Int?
+  criado_em DateTime @default(now())
+}
+
+// 7. Categorias de eventos
+model Categoria {
+  id          Int      @id @default(autoincrement())
+  nome        String   @unique
+  descricao   String
+  cor         String   // Cor para identificação visual
+  criado_em   DateTime @default(now())
+  eventos     Evento[]
+}
+
+// 8. Locais da UnB
+model Local {
+  id          Int      @id @default(autoincrement())
+  nome        String
+  bloco       String
+  capacidade  Int
+  tipo        String   // 'auditorio', 'sala', 'laboratorio', 'anfiteatro'
+  criado_em   DateTime @default(now())
+  eventos     Evento[]
+}
+
+// 9. Palestrantes
+model Palestrante {
+  id          Int      @id @default(autoincrement())
+  nome        String
+  email       String
+  biografia   String
+  especialidade String
+  criado_em   DateTime @default(now())
+  atividades  Atividade[]
+}
+
+// 10. Avaliações dos eventos
+model Avaliacao {
+  id          Int      @id @default(autoincrement())
+  nota        Int      // 1-5
+  comentario  String?
+  usuario     Usuario  @relation(fields: [usuario_id], references: [id])
+  usuario_id  Int
+  evento      Evento   @relation(fields: [evento_id], references: [id])
+  evento_id   Int
+  criado_em   DateTime @default(now())
+}
