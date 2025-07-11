@@ -94,7 +94,7 @@ app.use('/eventos', eventRoutes);
 app.use('/organizador', organizerRoutes);
 app.use('/participante', registrationRoutes);
 app.use('/certificados', certificateRoutes);
-app.use('/arquivos', fileRoutes);
+app.use('/', fileRoutes);
 app.use('/organizador', activityRoutes);
 
 // Error handling middleware

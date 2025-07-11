@@ -54,7 +54,7 @@ export class FileController {
   static async removeFile(req: AuthRequest, res: Response): Promise<void> {
     try {
       const organizadorId = req.user!.id;
-      const arquivoId = parseInt(req.params.id);
+      const arquivoId = parseInt(req.params.field);
 
       await FileService.removeFile(arquivoId, organizadorId);
       res.json({ mensagem: 'Arquivo removido com sucesso' });

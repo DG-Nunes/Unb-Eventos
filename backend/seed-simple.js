@@ -6,12 +6,16 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed do banco de dados...');
 
-  // Limpar banco de dados
+  // Limpar banco de dados (ordem correta para evitar violação de FK)
   await prisma.certificado.deleteMany();
+  await prisma.avaliacao.deleteMany();
   await prisma.inscricao.deleteMany();
   await prisma.atividade.deleteMany();
   await prisma.arquivo.deleteMany();
   await prisma.evento.deleteMany();
+  await prisma.palestrante.deleteMany();
+  await prisma.local.deleteMany();
+  await prisma.categoria.deleteMany();
   await prisma.usuario.deleteMany();
 
   // 1. Criar Usuários
@@ -66,6 +70,26 @@ async function main() {
     })
   ]);
 
+  // 1. Criar Categorias
+  console.log('🏷️ Criando categorias...');
+  const categorias = await Promise.all([
+    prisma.categoria.create({ data: { nome: 'Tecnologia', descricao: 'Eventos de tecnologia', cor: '#1E90FF' } }),
+    prisma.categoria.create({ data: { nome: 'Ciências', descricao: 'Eventos de ciências', cor: '#32CD32' } }),
+    prisma.categoria.create({ data: { nome: 'Matemática', descricao: 'Eventos de matemática', cor: '#FFD700' } }),
+    prisma.categoria.create({ data: { nome: 'Engenharia', descricao: 'Eventos de engenharia', cor: '#FF4500' } }),
+    prisma.categoria.create({ data: { nome: 'Educação', descricao: 'Eventos de educação', cor: '#8A2BE2' } })
+  ]);
+
+  // 2. Criar Locais
+  console.log('🏛️ Criando locais...');
+  const locais = await Promise.all([
+    prisma.local.create({ data: { nome: 'Auditório Central', bloco: 'ICC', capacidade: 200, tipo: 'auditorio' } }),
+    prisma.local.create({ data: { nome: 'Sala 101', bloco: 'PAT', capacidade: 40, tipo: 'sala' } }),
+    prisma.local.create({ data: { nome: 'Lab. Computação', bloco: 'ICC', capacidade: 30, tipo: 'laboratorio' } }),
+    prisma.local.create({ data: { nome: 'Anfiteatro 9', bloco: 'ICC', capacidade: 80, tipo: 'anfiteatro' } }),
+    prisma.local.create({ data: { nome: 'Sala 205', bloco: 'FGA', capacidade: 50, tipo: 'sala' } })
+  ]);
+
   // 2. Criar Eventos
   console.log('🎉 Criando eventos...');
   const events = await Promise.all([
@@ -79,7 +103,9 @@ async function main() {
         bloco: 'ICC',
         capacidade: 150,
         status: 'ativo',
-        organizador_id: users[1].id
+        organizador_id: users[1].id,
+        categoria_id: categorias[0].id,
+        local_id: locais[0].id
       }
     }),
     prisma.evento.create({
@@ -92,7 +118,9 @@ async function main() {
         bloco: 'ICC',
         capacidade: 30,
         status: 'ativo',
-        organizador_id: users[2].id
+        organizador_id: users[2].id,
+        categoria_id: categorias[0].id,
+        local_id: locais[2].id
       }
     }),
     prisma.evento.create({
@@ -105,7 +133,9 @@ async function main() {
         bloco: 'CIC',
         capacidade: 50,
         status: 'ativo',
-        organizador_id: users[1].id
+        organizador_id: users[1].id,
+        categoria_id: categorias[0].id,
+        local_id: locais[2].id
       }
     }),
     prisma.evento.create({
@@ -118,7 +148,9 @@ async function main() {
         bloco: 'ICC',
         capacidade: 80,
         status: 'ativo',
-        organizador_id: users[2].id
+        organizador_id: users[2].id,
+        categoria_id: categorias[2].id,
+        local_id: locais[3].id
       }
     }),
     prisma.evento.create({
@@ -131,14 +163,16 @@ async function main() {
         bloco: 'ICC',
         capacidade: 120,
         status: 'ativo',
-        organizador_id: users[1].id
+        organizador_id: users[1].id,
+        categoria_id: categorias[1].id,
+        local_id: locais[0].id
       }
     })
   ]);
 
   // 3. Criar Atividades
   console.log('📋 Criando atividades...');
-  await Promise.all([
+  const atividades = await Promise.all([
     prisma.atividade.create({
       data: {
         nome: 'Palestra de Abertura',
@@ -186,9 +220,26 @@ async function main() {
     })
   ]);
 
+  // 6. Criar Palestrantes
+  console.log('🎤 Criando palestrantes...');
+  const palestrantes = await Promise.all([
+    prisma.palestrante.create({ data: { nome: 'Dr. Alice Borges', email: 'alice.borges@unb.br', biografia: 'Especialista em IA', especialidade: 'Inteligência Artificial' } }),
+    prisma.palestrante.create({ data: { nome: 'Prof. Bruno Lima', email: 'bruno.lima@unb.br', biografia: 'Doutor em Matemática', especialidade: 'Matemática' } }),
+    prisma.palestrante.create({ data: { nome: 'Dra. Carla Souza', email: 'carla.souza@unb.br', biografia: 'Engenharia de Software', especialidade: 'Engenharia de Software' } }),
+    prisma.palestrante.create({ data: { nome: 'Prof. Daniel Rocha', email: 'daniel.rocha@unb.br', biografia: 'Física Quântica', especialidade: 'Física' } }),
+    prisma.palestrante.create({ data: { nome: 'Dr. Eduardo Martins', email: 'eduardo.martins@unb.br', biografia: 'Banco de Dados', especialidade: 'Banco de Dados' } })
+  ]);
+
+  // Relacionar palestrantes a atividades (exemplo)
+  await prisma.atividade.update({ where: { id: atividades[0].id }, data: { palestrantes: { connect: [{ id: palestrantes[0].id }] } } });
+  await prisma.atividade.update({ where: { id: atividades[1].id }, data: { palestrantes: { connect: [{ id: palestrantes[1].id }] } } });
+  await prisma.atividade.update({ where: { id: atividades[2].id }, data: { palestrantes: { connect: [{ id: palestrantes[2].id }] } } });
+  await prisma.atividade.update({ where: { id: atividades[3].id }, data: { palestrantes: { connect: [{ id: palestrantes[3].id }] } } });
+  await prisma.atividade.update({ where: { id: atividades[4].id }, data: { palestrantes: { connect: [{ id: palestrantes[4].id }] } } });
+
   // 4. Criar Inscrições
   console.log('📝 Criando inscrições...');
-  await Promise.all([
+  const inscricoes = await Promise.all([
     prisma.inscricao.create({
       data: {
         status: 'confirmada',
@@ -281,49 +332,63 @@ async function main() {
   await Promise.all([
     prisma.certificado.create({
       data: {
-        inscricao_id: 1, // Pedro Costa na Semana de Computação
+        inscricao_id: inscricoes[0].id, // Pedro Costa na Semana de Computação
         data_emissao: new Date('2024-07-19T18:00:00Z'),
         url: '/certificados/certificado_1_1.pdf'
       }
     }),
     prisma.certificado.create({
       data: {
-        inscricao_id: 2, // Ana Oliveira na Semana de Computação
+        inscricao_id: inscricoes[1].id, // Ana Oliveira na Semana de Computação
         data_emissao: new Date('2024-07-19T18:00:00Z'),
         url: '/certificados/certificado_1_2.pdf'
       }
     }),
     prisma.certificado.create({
       data: {
-        inscricao_id: 4, // Ana Oliveira no Workshop de Programação
+        inscricao_id: inscricoes[3].id, // Ana Oliveira no Workshop de Programação
         data_emissao: new Date('2024-07-20T18:00:00Z'),
         url: '/certificados/certificado_2_2.pdf'
       }
     }),
     prisma.certificado.create({
       data: {
-        inscricao_id: 5, // Pedro Costa na Maratona de Programação
+        inscricao_id: inscricoes[4].id, // Pedro Costa na Maratona de Programação
         data_emissao: new Date('2024-08-10T18:00:00Z'),
         url: '/certificados/certificado_3_1.pdf'
       }
     }),
     prisma.certificado.create({
       data: {
-        inscricao_id: 3, // Pedro Costa no Workshop de Programação (pendente)
+        inscricao_id: inscricoes[2].id, // Pedro Costa no Workshop de Programação (pendente)
         data_emissao: new Date('2024-07-20T18:00:00Z'),
         url: '/certificados/certificado_2_1.pdf'
       }
     })
   ]);
 
+  // 7. Criar Avaliações
+  console.log('⭐ Criando avaliações...');
+  await Promise.all([
+    prisma.avaliacao.create({ data: { nota: 5, comentario: 'Excelente evento!', usuario_id: users[3].id, evento_id: events[0].id } }),
+    prisma.avaliacao.create({ data: { nota: 4, comentario: 'Muito bom!', usuario_id: users[4].id, evento_id: events[0].id } }),
+    prisma.avaliacao.create({ data: { nota: 3, comentario: 'Bom, mas pode melhorar.', usuario_id: users[3].id, evento_id: events[1].id } }),
+    prisma.avaliacao.create({ data: { nota: 5, comentario: 'Aprendi muito!', usuario_id: users[4].id, evento_id: events[1].id } }),
+    prisma.avaliacao.create({ data: { nota: 2, comentario: 'Organização ruim.', usuario_id: users[3].id, evento_id: events[2].id } })
+  ]);
+
   console.log('✅ Seed concluído com sucesso!');
-  console.log(`📊 Dados criados:`);
+  console.log('📊 Dados criados:');
   console.log(`   - ${users.length} usuários`);
+  console.log(`   - ${categorias.length} categorias`);
+  console.log(`   - ${locais.length} locais`);
   console.log(`   - ${events.length} eventos`);
-  console.log(`   - 5 atividades`);
-  console.log(`   - 5 inscrições`);
-  console.log(`   - 5 arquivos`);
-  console.log(`   - 5 certificados`);
+  console.log('   - 5 atividades');
+  console.log('   - 5 inscrições');
+  console.log('   - 5 arquivos');
+  console.log('   - 5 certificados');
+  console.log(`   - ${palestrantes.length} palestrantes`);
+  console.log('   - 5 avaliações');
 }
 
 main()
@@ -333,4 +398,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });

@@ -19,6 +19,9 @@ router.post('/eventos/:eventId/arquivos/upload', authenticateToken, upload.singl
 // DELETE /eventos/{id}/arquivos/{fileId} - Excluir arquivo
 router.delete('/eventos/:eventId/arquivos/:fileId', authenticateToken, FileController.removeFile);
 
+// DELETE /arquivos/{field} - excluir arquivo por /ID
+router.delete('/arquivos/:field', authenticateToken, FileController.removeFile);
+
 // GET /eventos/{id}/arquivos - Listar arquivos de um evento
 router.get('/eventos/:eventId/arquivos', FileController.getEventFiles);
 
